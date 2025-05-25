@@ -97,14 +97,4 @@ did-system/
 └── hardhat.config.js    # Hardhat配置
 ```
 
-## 贡献指南
 
-欢迎提交Pull Request！请确保：
-
-1. 遵循现有代码风格
-2. 包含相关测试
-3. 更新文档
-
-## 许可证
-
-MIT License
