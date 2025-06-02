@@ -1,4 +1,40 @@
 {
   "_format": "hh-sol-cache-2",
-  "files": {}
+  "files": {
+    "D:\\did-system\\contracts\\DIDRegistry.sol": {
+      "lastModificationDate": 1748860924084,
+      "contentHash": "5549ec50c5352f20a2d3d3ff7c4dfe03",
+      "sourceName": "contracts/DIDRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "DIDRegistry"
+      ]
+    }
+  }
 }

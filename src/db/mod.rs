@@ -24,18 +24,48 @@ pub fn init_database() -> Result<(), Error> {
 }
 
 /// 存储DID文档
-pub fn store_did_document(did: &str, document: &DIDDocument) -> Result<(), Error> {
+pub fn store_did_document(did: &str, document: &DIDDocument, is_update: bool) -> Result<(), Error> {
     let conn = Connection::open("did.db")
         .map_err(|e| Error::DatabaseError(format!("Failed to open database: {}", e)))?;
+
+    // 检查DID是否存在
+    let mut stmt = conn.prepare(
+        "SELECT COUNT(*) FROM did_documents WHERE did = ?"
+    ).map_err(|e| Error::DatabaseError(format!("Failed to prepare statement: {}", e)))?;
+
+    let count: i64 = stmt.query_row(params![did], |row| row.get(0))
+        .map_err(|e| Error::DatabaseError(format!("Failed to check DID existence: {}", e)))?;
+
+    // 如果是创建操作且DID已存在，返回错误
+    if !is_update && count > 0 {
+        return Err(Error::InvalidInput(format!("DID already exists: {}", did)));
+    }
+    // 如果是更新操作且DID不存在，返回错误
+    if is_update && count == 0 {
+        return Err(Error::NotFound(format!("DID not found: {}", did)));
+    }
 
     let document_json = serde_json::to_string(document)
         .map_err(|e| Error::SerializationError(e.to_string()))?;
 
-    conn.execute(
-        "INSERT OR REPLACE INTO did_documents (did, document, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4)",
-        params![did, document_json, document.created, document.updated],
-    ).map_err(|e| Error::DatabaseError(format!("Failed to store document: {}", e)))?;
+    // 根据操作类型选择SQL语句
+    let sql = if is_update {
+        "UPDATE did_documents SET document = ?, updated_at = ? WHERE did = ?"
+    } else {
+        "INSERT INTO did_documents (did, document, created_at, updated_at) VALUES (?, ?, ?, ?)"
+    };
+
+    if is_update {
+        conn.execute(
+            sql,
+            params![document_json, document.updated, did],
+        )
+    } else {
+        conn.execute(
+            sql,
+            params![did, document_json, document.created, document.updated],
+        )
+    }.map_err(|e| Error::DatabaseError(format!("Failed to store document: {}", e)))?;
 
     Ok(())
 }

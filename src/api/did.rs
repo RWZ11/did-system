@@ -2,7 +2,7 @@
 
 use axum::extract::{Path, Json};
 use axum::http::StatusCode;
-use ed25519_dalek::{SigningKey, KEYPAIR_LENGTH};
+use ed25519_dalek::SigningKey;
 use serde::Deserialize;
 use crate::did::{self, DIDDocument, PublicKeyInfo};
 use crate::types::Error;
@@ -112,7 +112,7 @@ async fn process_create_did(request: CreateDIDRequest) -> Result<DIDDocument, Er
     };
 
     // 存储DID文档
-    db::store_did_document(&did, &document)?;
+    db::store_did_document(&did, &document, false)?;
 
     log::info!("DID创建成功: {}", did);
     Ok(document)
@@ -169,15 +169,15 @@ async fn process_update_did(did: String, request: UpdateDIDRequest) -> Result<DI
         .into_vec()
         .map_err(|e| Error::InvalidInput(format!("Invalid signing key encoding: {}", e)))?;
 
-    if key_bytes.len() != KEYPAIR_LENGTH {
-        return Err(Error::InvalidInput("Invalid signing key length".to_string()));
+    if key_bytes.len() != 32 {
+        return Err(Error::InvalidInput(format!("Ed25519私钥长度必须为32字节，实际为{}字节", key_bytes.len())));
     }
 
-    let mut bytes = [0u8; KEYPAIR_LENGTH];
-    bytes.copy_from_slice(&key_bytes);
-
-    let signing_key = SigningKey::from_keypair_bytes(&bytes)
-        .map_err(|e| Error::InvalidInput(format!("Invalid signing key: {}", e)))?;
+    let key_array: [u8; 32] = key_bytes.try_into().map_err(|_| {
+        Error::InvalidInput("无法处理私钥数据".to_string())
+    })?;
+    
+    let signing_key = SigningKey::from_bytes(&key_array);
 
     // 更新DID文档
     did::update_did(&did, &signing_key, request.document).await
@@ -212,15 +212,15 @@ async fn process_deactivate_did(did: String, request: DeactivateDIDRequest) -> R
         .into_vec()
         .map_err(|e| Error::InvalidInput(format!("Invalid signing key encoding: {}", e)))?;
 
-    if key_bytes.len() != KEYPAIR_LENGTH {
-        return Err(Error::InvalidInput("Invalid signing key length".to_string()));
+    if key_bytes.len() != 32 {
+        return Err(Error::InvalidInput(format!("Ed25519私钥长度必须为32字节，实际为{}字节", key_bytes.len())));
     }
 
-    let mut bytes = [0u8; KEYPAIR_LENGTH];
-    bytes.copy_from_slice(&key_bytes);
-
-    let signing_key = SigningKey::from_keypair_bytes(&bytes)
-        .map_err(|e| Error::InvalidInput(format!("Invalid signing key: {}", e)))?;
+    let key_array: [u8; 32] = key_bytes.try_into().map_err(|_| {
+        Error::InvalidInput("无法处理私钥数据".to_string())
+    })?;
+    
+    let signing_key = SigningKey::from_bytes(&key_array);
 
     // 停用DID
     did::deactivate_did(&did, &signing_key).await

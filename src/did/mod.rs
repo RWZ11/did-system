@@ -70,8 +70,8 @@ pub async fn create_did(signing_key: &SigningKey) -> Result<DIDDocument, Error> 
         updated: timestamp,
     };
     
-    // 将DID文档保存到数据库
-    db::store_did_document(&did, &document)?;
+    // 将DID文档保存到数据库，指定为创建操作（is_update = false）
+    db::store_did_document(&did, &document, false)?;
     
     // 将DID注册到区块链
     blockchain::register_did(&did, &public_key_bytes).await?;
@@ -122,8 +122,8 @@ pub async fn update_did(
     // 更新时间戳
     document.updated = utils::current_timestamp();
     
-    // 更新数据库中的DID文档
-    db::store_did_document(did, &document)?;
+    // 更新数据库中的DID文档，指定为更新操作（is_update = true）
+    db::store_did_document(did, &document, true)?;
     
     Ok(document)
 }
