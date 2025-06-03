@@ -92,9 +92,10 @@ static mut CLIENT: Option<BlockchainClient> = None;
 /// 初始化区块链连接
 pub async fn init() -> Result<(), Error> {
     let config = BlockchainConfig {
-        node_url: "http://localhost:8545/did".to_string(),
+        node_url: "http://localhost:3000".to_string(),
     };
-    println!("Blockchain initialized with endpoint: {}", config.node_url);
+    log::info!("初始化区块链客户端，API端点: {}", config.node_url);
+    println!("正在连接区块链API服务...");
     unsafe {
         CLIENT = Some(BlockchainClient::init(config));
     }
